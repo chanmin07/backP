@@ -4,33 +4,33 @@ import math
 import queue
 import random
 
-# 모델 이미지와 HSV공간으로 변환한 모델 이미지
-roi = cv.imread('model.png')
-hsv_roi = cv.cvtColor(roi,cv.COLOR_BGR2HSV)
-roi_gray = cv.cvtColor(roi,cv.COLOR_BGR2GRAY)
-
-# 타겟 이미지와 HSV공간으로 변환한 타겟 이미지
-target = cv.imread('4.jpg')
-#여기서 가우시안 마스크써서 잡음제거
-
 gaussian_mask = np.array([
     [0.0000,0.0000,0.0002,0.0000,0.0000],
     [0.0000,0.0113,0.0837,0.0113,0.0000],
     [0.0002,0.0837,0.6187,0.0837,0.0002],
     [0.0000,0.0113,0.0837,0.0113,0.0000],
     [0.0000,0.0000,0.0002,0.0000,0.0000]])
-    
-output_gaussian = np.zeros((roi.shape[0],roi.shape[1]),dtype=np.uint8)
 
-for j in range(2,roi.shape[0]-2):
-    for i in range(2,roi.shape[1]-2):
-        sum = 0
-        for r in range(-2,3):
-            for c in range(-2,3):
-                sum += gaussian_mask.item(c+2,r+2) * roi_gray.item(j+c,i+r)
-        int(sum)
-        output_gaussian.itemset(j,i,sum)
+# 모델 이미지와 HSV공간으로 변환한 모델 이미지
+roi = cv.imread('model.png')
+hsv_roi = cv.cvtColor(roi,cv.COLOR_BGR2HSV)
 
+# 타겟 이미지와 HSV공간으로 변환한 타겟 이미지
+origin_target = cv.imread('4.jpg')
+target =  np.zeros((origin_target.shape[0],origin_target.shape[1],3),dtype=np.uint8)
+
+for j in range(origin_target.shape[0]):
+    for i in range(origin_target.shape[1]):
+        for k in range(3):
+            sum = 0
+            for r in range(-2,3):
+                for c in range(-2,3):
+                    y = j+c
+                    x = i+r
+                    if y >= 0 and y < origin_target.shape[0] and x >=0 and x < origin_target.shape[1]:
+                        sum += gaussian_mask.item(c+2,r+2) * origin_target.item(y,x,k)
+            int(sum)
+            target.itemset(j,i,k,sum)
 hsv_target = cv.cvtColor(target,cv.COLOR_BGR2HSV)
 # 책에서 q단계로 줄인 2차원 히스토그램을 만든다. 여기서는 64를 사용하였다.
 scale = 16
@@ -205,7 +205,7 @@ face_index = np.where(label_img==face) # 라벨 값이 얼굴 라벨값인 것�
 
 '''
 face_index는 튜플 형식을 지닌다.
-첫번째 원소는 열들의 집합. 두번째 원소는 행들의 집합이다.
+첫번째 원소는 행들의 집합. 두번째 원소는 열들의 집합이다.
 '''
 
 pt1_y = min(face_index[0]) # 얼굴 좌측상단 행값. 행값들중 최솟값
@@ -222,6 +222,5 @@ cv.imshow('label_img',new_img)
 # 이미지를 출력한다. imshow함수는 입력되는 배열의 값이 소수일 경우 [0.0, 1.0]의 범위를 [0, 255]에 매핑하여 변환해 출력해준다.
 cv.imshow('img',backP_img)
 cv.imshow('binary img',binary)
-cv.imshow('gaussian',output_gaussian)
 cv.waitKey(0)
 cv.destroyAllWindows()
